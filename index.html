@@ -1,0 +1,59 @@
+<html>
+
+	<header>
+		<meta charset="UTF-8">
+		<title>Web Osu</title>
+		
+		<link rel="stylesheet" type="text/css" href="style.css">
+		<script id="vert" type="x-shader/x-vertex">
+			attribute vec3 position;
+			attribute vec2 textureCoord;
+			uniform mat4 transform;
+			
+			varying vec2 tex;
+			void main(void) {
+				gl_Position = transform * vec4(position, 1.0);
+				tex = textureCoord;
+			}
+		</script>
+		<script id="frag" type="x-shader/x-fragment">
+			precision highp float;
+			uniform sampler2D defuse;
+			uniform vec3 colour;
+			uniform float alpha;
+			uniform float crop;
+			
+			varying vec2 tex;
+			void main(void) {
+				if (tex.x > crop)
+					discard;
+				gl_FragColor = vec4(colour, alpha) * texture2D(defuse, tex);
+			}
+		</script>
+		<script src="gl-matrix-min.js"></script>
+		<script src="jszip.js"></script>
+		<script src="engine.js"></script>
+		<script src="osu.js"></script>
+	</header>
+	
+	<body>
+		<canvas id="display" style="display:none;opacity:0" 
+			onmousemove="getMouseCoords(event)">
+		</canvas>
+		<div id="drop_zone" class="drop_zone" ondrop="fileDropped(event);" 
+			ondragover="dragOverHandler(event);">
+			<h1>Drag .osk files here to play</h1>
+		</div>
+		
+		<div id="buttons" class="buttons" style="margin-top:50%">
+			<h1 style="margin-top:0px">Select Map</h1>
+			<div id="button_box"></div>
+			<button class="close_button" onclick="closeBox();">Close File</button>
+		</div>
+	</body>
+	
+	<script>
+		initOsu();
+	</script>
+</html>
+

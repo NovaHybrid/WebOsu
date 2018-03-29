@@ -1,0 +1,56 @@
+
+canvas {
+	position:fixed;
+	top:00px;
+	left:0px;
+	width:100%;
+	height:100%;
+	cursor: none;
+	transition: opacity 10s;
+}
+
+.buttons {
+	position:fixed;
+	background-color:white;
+	left:50%;
+	top:50%;
+	transform:translate(-50%,-50%);
+	padding:10px;
+	transition: margin-top 1s;
+	text-align: center;
+}
+
+.drop_zone {
+	position:fixed;
+	width:100%;
+	height:100%;
+	left:0px;
+	top:0px;
+	text-align: center;
+}
+
+button {
+	background-color: #4CAF50;
+	border: none;
+	color: white;
+	padding: 15px 32px;
+	text-align: center;
+	text-decoration: none;
+	display: inline-block;
+	font-size: 16px;
+	transition: background-color 0.2s;
+	width: 100%;
+}
+
+button:hover {
+	background-color: #3c893f;
+}
+
+.close_button {
+	background-color: #b73636;
+}
+
+.close_button:hover {
+	background-color: #872828;
+}
+
