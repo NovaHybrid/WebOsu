@@ -280,7 +280,7 @@ function loadSprite(file_path)
         texture_load--;
     }
     image.src = file_path;
-    return {texture: texture, width: image.width, height: image.height};
+	return {texture: texture, image: image};
 }
 
 function isPowerOf2(value) 
@@ -294,7 +294,7 @@ function updateDisplay()
 	display.height = window.innerHeight;
 	asp = parseFloat(display.width) / parseFloat(display.height);
 	gl.viewport(0, 0, display.width, display.height);
-	gl.clearColor(0.5, 0.5, 0.5, 1.0);
+	gl.clearColor(0, 0, 0, 1.0);
 	gl.clear(gl.COLOR_BUFFER_BIT);
 }
 
@@ -309,12 +309,18 @@ function drawModel(model, sprite)
     gl.drawElements(gl.TRIANGLES, model.length, gl.UNSIGNED_SHORT, 0);
 }
 
+function osuScreenCoord(p)
+{
+	var x = (p[0] * 2.0 - 1.0) / asp * osuAsp * scale;
+	var y = (p[1] * 2.0 - 1.0) * scale;
+	return [x, y];
+}
+
 function drawCircle(sprite, x, y, rad, colour, alpha) 
 {
 	gl.useProgram(shader.program);
-    var screenX = (x * 2.0 - 1.0) / asp;
-    var screenY = y * 2.0 - 1.0;
-    var position = [screenX * scale * osuAsp, screenY * scale, 0];
+    var screen = osuScreenCoord([x, y]);
+    var position = [screen[0], screen[1], 0];
     var size = [rad*2.0/asp, rad*2.0, 1.0];
     
     var transform = mat4.create();
@@ -360,7 +366,7 @@ function drawBackground(sprite)
 	gl.useProgram(shader.program);
     var fade = 0.3;
 
-    var image_asp = sprite.width / sprite.height;
+    var image_asp = sprite.image.width / sprite.image.height;
     var transform = mat4.create();
     mat4.scale(transform, transform, [(2.0 / asp) * image_asp, 2.0, 1.0]);
     gl.uniformMatrix4fv(shader.transform, false, transform);

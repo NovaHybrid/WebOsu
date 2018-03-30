@@ -1,5 +1,5 @@
 
-var circle, apCircle, slider_tex, slider_follow;
+var circle, apCircle, slider_tex, slider_follow, slider_outline;
 var cursor, trail_tex, top_bar, health_bar;
 var miss, three, one, five;
 var combos = [];
@@ -18,6 +18,7 @@ var buttons;
 var button_box;
 var drop_zone;
 var tapped = false;
+var health = 1.0;
 
 var arTable = [
 	1800, 1680, 1560, 1440, 1320, 
@@ -54,7 +55,8 @@ function initOsu()
     circle = loadSprite("Skin/hitcircle.png");
     apCircle = loadSprite("Skin/approachcircle.png");
     slider_tex = loadSprite("slider.png");
-    slider_follow = loadSprite("Skin/sliderfollowcircle.png");
+    slider_follow = loadSprite("Skin/sliderb0.png");
+    slider_outline = loadSprite("Skin/sliderfollowcircle.png");
     cursor = loadSprite("Skin/cursor.png");
     trail_tex = loadSprite("Skin/cursor-smoke.png");
     top_bar = loadSprite("Skin/scorebar-bg.png");
@@ -287,6 +289,7 @@ function decodeHit(line)
         hitObject.pixel_length = parseFloat(data[7]);
         hitObject.slider_length = hitObject.pixel_length / 
         	(100.0 * slider_mul) * hitObject.tp.mpb;
+        hitObject.onHitOffset = 1000;
 	}
 	
     if ((hitObject.type & 0x4) == 0x4) 
@@ -315,8 +318,9 @@ function update()
 		if (currTime < hit.time + hit.slider_length + fade_time && currTime > hit.time - delay) 
         {
         	var alpha = calcAlpha(hit, currTime, delay);
+        	var rad_offset = (1.0 - alpha) * 0.03;
 			if ((hit.type & 0x3) == 1) 
-				drawCircle(circle, hit.x, hit.y, circle_rad, hit.colour, alpha);
+				drawCircle(circle, hit.x, hit.y, circle_rad + rad_offset, hit.colour, alpha);
 			else if ((hit.type & 0x3) == 2) 
 				drawSliderHit(hit, currTime, alpha);
 			drawApCircle(hit, currTime, delay, alpha);
@@ -335,24 +339,30 @@ function handleScore(hit, currTime)
 	if (hit.done == false)
 	{
 		var mouse_pos = [mouse_x, mouse_y];
-		var screen_pos = [(hit.x*2.0-1.0) / asp * osuAsp * scale, (hit.y*2.0-1.0) * scale];
+		var screen_pos = osuScreenCoord([hit.x, hit.y]);
 		var dis = vec2.distance(screen_pos, mouse_pos);
 		if (tapped && dis <= circle_rad)
 			handleTap(hit, currTime);
 	
 		if (currTime > hit.time + hit.slider_length)
-			tapHitObject(hit, 1000);
+		{
+			var offset = 100;
+			if ((hit.type & 0x3) == 2)
+				offset = hit.onHitOffset;
+			tapHitObject(hit, offset);
+		}
 	}
 }
 
 function handleTap(hit, currTime)
 {
+	var offset = hit.time - currTime;
 	if ((hit.type & 0x3) == 2)
 	{
-		
+		hit.onHitOffset = offset;
 		return;
 	}
-	tapHitObject(hit, hit.time - currTime);
+	tapHitObject(hit, offset);
 }
 
 function tapHitObject(hit, offset)
@@ -385,11 +395,10 @@ function drawScores()
 	{
 		var score = scores[i];
 		var sprite = score.sprite;
-		var x = ((score.x * 2.0 - 1.0) / asp * osuAsp) * scale;
-		var y = (score.y * 2.0 - 1.0) * scale;
+		var screen = osuScreenCoord([score.x, score.y]);
 		var age = Date.now() - score.age;
-		drawSprite(sprite, x, y, (score_scale*sprite.width) / asp, 
-			score_scale*sprite.height, 1.0-(age / 500.0), 1.0);
+		drawSprite(sprite, screen[0], screen[1], (score_scale*sprite.image.width) / asp, 
+			score_scale*sprite.image.height, 1.0-(age / 500.0), 1.0);
 		
 		if (age >= 500)
 			to_remove.push(i);
@@ -399,16 +408,12 @@ function drawScores()
 		scores.splice(to_remove[i], 1);
 }
 
-var health = 1.0;
-var time = 0;
 function drawUI()
 {
 	var scale = 0.2;
-	var bar_asp = top_bar.width / top_bar.height;
+	var bar_asp = top_bar.image.width / top_bar.image.height;
 	var width = (scale * bar_asp) / asp;
 	
-	health = Math.sin(time);
-	time += 0.01;
 	drawSprite(top_bar, -1 + width/2, 1 - scale/2, width, scale, 1.0, 1.0);
 	drawSprite(health_bar, -1 + width/2 + 0.01/asp, 1 - scale/2 - 0.04, 
 		width, scale, 1.0, health);
@@ -487,7 +492,17 @@ function drawSliderHit(hit, currTime, alpha)
         	{
         		factor = (factor - offset) / rel_length;
         		var point = getCurvePoint(factor, slider_info.points);
-        		drawCircle(slider_follow, point.p[0], point.p[1], circle_rad, hit.colour, 1.0);
+        		drawCircle(slider_follow, point.p[0], point.p[1], 
+        			circle_rad + 0.05, hit.colour, 1.0);
+        		
+				var screen_pos = osuScreenCoord([hit.x, hit.y]);
+				var dis = vec2.distance(screen_pos, [mouse_x, mouse_y]);
+        		var outline_rad = Math.min(dis, 0.2);
+        		drawCircle(slider_outline, point.p[0], point.p[1], 
+        			circle_rad + outline_rad, hit.colour, 1.0);
+        		
+        		if (dis > circle_rad*4.0)
+        			hit.onHitOffset = 1000;
         	}
         	offset += rel_length;
         }
