@@ -1,9 +1,11 @@
 
 var circle, apCircle, slider_tex, slider_follow;
 var cursor, trail_tex, top_bar, health_bar;
+var miss, three, one, five;
 var combos = [];
 var hitObjects = [];
 var timing_points = [];
+var scores = [];
 var background = null;
 var startTime = 0;
 var approachRate = 7;
@@ -15,6 +17,7 @@ var file;
 var buttons;
 var button_box;
 var drop_zone;
+var tapped = false;
 
 var arTable = [
 	1800, 1680, 1560, 1440, 1320, 
@@ -37,6 +40,14 @@ function getMouseCoords(event)
     	trails.shift();
 }
 
+document.onkeydown = function(event)
+{
+	var key = String.fromCharCode(event.which);
+	if (key == 'Z' || key == 'X')
+		tapped = true;
+	console.log(key);
+}
+
 function initOsu() 
 {
 	initGameEngine();
@@ -48,6 +59,10 @@ function initOsu()
     trail_tex = loadSprite("Skin/cursor-smoke.png");
     top_bar = loadSprite("Skin/scorebar-bg.png");
     health_bar = loadSprite("Skin/scorebar-colour.png");
+    miss = loadSprite("Skin/score-x.png");
+    three = loadSprite("Skin/hit300k.png");
+    one = loadSprite("Skin/hit100k.png");
+    five = loadSprite("Skin/hit50.png");
     buttons = document.getElementById("buttons");
     button_box = document.getElementById("button_box");
     drop_zone = document.getElementById("drop_zone");
@@ -281,6 +296,7 @@ function decodeHit(line)
     	currComboIndex = currComboIndex % combos.length;
     }
 	hitObject.colour = combos[currComboIndex];
+	hitObject.done = false;
     
 	hitObjects.push(hitObject);
 }
@@ -296,23 +312,91 @@ function update()
 	for (var i = 0; i < hitObjects.length; i++) 
     {
 		var hit = hitObjects[i];
-		var scale = 1.8;
 		if (currTime < hit.time + hit.slider_length + fade_time && currTime > hit.time - delay) 
         {
         	var alpha = calcAlpha(hit, currTime, delay);
-        
-			var x = hit.x;
-			var y = hit.y;
 			if ((hit.type & 0x3) == 1) 
-				drawCircle(circle, x, y, circle_rad, hit.colour, alpha);
+				drawCircle(circle, hit.x, hit.y, circle_rad, hit.colour, alpha);
 			else if ((hit.type & 0x3) == 2) 
 				drawSliderHit(hit, currTime, alpha);
 			drawApCircle(hit, currTime, delay, alpha);
+			handleScore(hit, currTime);
 		}
 	}
 	
+	drawScores();
 	drawUI();
 	drawCursor();
+	tapped = false;
+}
+
+function handleScore(hit, currTime)
+{
+	if (hit.done == false)
+	{
+		var mouse_pos = [mouse_x, mouse_y];
+		var screen_pos = [(hit.x*2.0-1.0) / asp * osuAsp * scale, (hit.y*2.0-1.0) * scale];
+		var dis = vec2.distance(screen_pos, mouse_pos);
+		if (tapped && dis <= circle_rad)
+			handleTap(hit, currTime);
+	
+		if (currTime > hit.time + hit.slider_length)
+			tapHitObject(hit, 1000);
+	}
+}
+
+function handleTap(hit, currTime)
+{
+	if ((hit.type & 0x3) == 2)
+	{
+		
+		return;
+	}
+	tapHitObject(hit, hit.time - currTime);
+}
+
+function tapHitObject(hit, offset)
+{
+	hit.done = true;
+	var x = hit.x;
+	var y = hit.y;
+	if ((hit.type & 0x3) == 2)
+	{
+		var point = hit.points[hit.points.length-1];
+		x = point[0];
+		y = point[1];
+	}
+	
+	var sprite = miss;
+	if (offset < 100)
+		sprite = three;
+	else if (offset < 200)
+		sprite = one;
+	else if (offset < 300)
+		sprite = five;
+	scores.push({sprite: sprite, x: x, y: y, age: Date.now()});
+}
+
+function drawScores()
+{
+	var score_scale = 0.002;
+	var to_remove = [];
+	for (var i = 0; i < scores.length; i++)
+	{
+		var score = scores[i];
+		var sprite = score.sprite;
+		var x = ((score.x * 2.0 - 1.0) / asp * osuAsp) * scale;
+		var y = (score.y * 2.0 - 1.0) * scale;
+		var age = Date.now() - score.age;
+		drawSprite(sprite, x, y, (score_scale*sprite.width) / asp, 
+			score_scale*sprite.height, 1.0-(age / 500.0), 1.0);
+		
+		if (age >= 500)
+			to_remove.push(i);
+	}
+	
+	for (var i = 0; i < to_remove.length; i++)
+		scores.splice(to_remove[i], 1);
 }
 
 var health = 1.0;

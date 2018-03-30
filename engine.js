@@ -261,7 +261,6 @@ function loadSprite(file_path)
     texture_load++;
     
     var image = new Image();
-    image.crossOrigin = "Anonymous";
     image.onload = function() 
     {
         gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -276,8 +275,8 @@ function loadSprite(file_path)
         {
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
         }
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
         texture_load--;
     }
     image.src = file_path;
@@ -295,7 +294,7 @@ function updateDisplay()
 	display.height = window.innerHeight;
 	asp = parseFloat(display.width) / parseFloat(display.height);
 	gl.viewport(0, 0, display.width, display.height);
-	gl.clearColor(0, 0, 0, 1.0);
+	gl.clearColor(0.5, 0.5, 0.5, 1.0);
 	gl.clear(gl.COLOR_BUFFER_BIT);
 }
 
