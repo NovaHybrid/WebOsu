@@ -316,6 +316,13 @@ function osuScreenCoord(p)
 	return [x, y];
 }
 
+function testAABBCollition(p_x, p_y, x, y, w, h)
+{
+	if (p_x > x-w && p_x < x+w && p_y > y-h && p_y < y+h)
+		return true;
+	return false;
+}
+
 function drawCircle(sprite, x, y, rad, colour, alpha) 
 {
 	gl.useProgram(shader.program);
@@ -361,10 +368,9 @@ function drawSprite(sprite, x, y, width, height, alpha, crop)
     drawModel(quad, sprite);
 }
 
-function drawBackground(sprite) 
+function drawBackground(sprite, fade) 
 {
 	gl.useProgram(shader.program);
-    var fade = 0.3;
 
     var image_asp = sprite.image.width / sprite.image.height;
     var transform = mat4.create();
